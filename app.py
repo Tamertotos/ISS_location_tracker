@@ -1,6 +1,7 @@
 import tkinter
 import datetime as dt
 import requests
+import smtplib
 
 FONT = ("Courier",20,"bold")
 LATITUDE = 52.237049
@@ -100,5 +101,23 @@ class Logic:
             self.day_state = "Day time"
         else:
             self.day_state = "Night time"
-            #self.send_mail()
+            self.send_mail()
         self.gui_app.change_label_image(self.day_state)
+
+    def send_mail(self):
+        smtp_address = ""
+        if "@gmail.com" in self.credentials_dict["EMAIL_SENDER"]:
+            smtp_address = "smtp.gmail.com"
+        elif "@yahoo.com" in self.credentials_dict["EMAIL_SENDER"]:
+            smtp_address = "smtp.mail.yahoo.com"
+        elif "@hotmail.com" in self.credentials_dict["EMAIL_SENDER"]:
+            smtp_address = "smtp.live.com"
+        else:
+            print("Unknown address; check the mail address provider")
+
+        with smtplib.SMTP(smtp_address) as connection:
+            connection.starttls()
+            connection.login(user=self.credentials_dict["EMAIL_SENDER"], password=self.credentials_dict["pass"])
+            connection.sendmail(from_addr=self.credentials_dict["EMAIL_SENDER"],
+                                to_addrs=self.credentials_dict["EMAIL_RECEIVER"],
+                                msg="Subject:Look Up!\n\nISS passing above you!".encode("utf-8"))
