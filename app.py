@@ -4,7 +4,7 @@ import requests
 
 FONT = ("Courier",20,"bold")
 LATITUDE = 52.237049
-LONGITUDE =  21.017532
+LONGITUDE = 21.017532
 MAP_HEIGHT = 640
 MAP_WIDTH = 1280
 
@@ -15,6 +15,11 @@ class App(tkinter.Tk):
         self.minsize(1280,720)
         self.map_image = tkinter.PhotoImage(file="Images/world_map.png")
         self.satellite_image = tkinter.PhotoImage(file="Images/satellite.png")
+
+        self.daytime = {
+            "Day time": tkinter.PhotoImage(file="Images/sun.png"),
+            "Night time": tkinter.PhotoImage(file="Images/moon.png")
+        }
 
         self.build_canvas()
         self.build_labels()
@@ -27,19 +32,25 @@ class App(tkinter.Tk):
 
     def build_labels(self):
         self.label1 = tkinter.Label(self,text="", font=FONT)
-        self.label1.place(x=900,y=20)
+        self.label1.place(x=800,y=20)
 
         self.label2 = tkinter.Label(self,text=f"Location\nLatitude = {LATITUDE}\nLongitude = {LONGITUDE}" , font=FONT)
-        self.label2.place(x=500,y=0)
+        self.label2.place(x=400,y=0)
 
         self.label3 = tkinter.Label(self,text="", font=FONT)
-        self.label3.place(x=100,y=0)
+        self.label3.place(x=50,y=0)
+
+        self.label4 = tkinter.Label(self,image=self.daytime["Day time"])
+        self.label4.place(x=1100,y=10)
 
     def change_time_label(self):
         self.label1.config(text=f"Current time\n{dt.datetime.now().strftime("%d.%m.%Y %H:%M")}")
 
     def change_space_station_loc_label(self,lat,long):
         self.label3.config(text=f"ISS location\nLatitude ={lat}\nLongitude = {long} ")
+
+    def change_label_image(self, state):
+        self.label4.config(image=self.daytime[state])
 
     def move_iss(self,x,y):
         self.canvas.coords(self.canvas_satellite_image, x, y)
@@ -48,10 +59,8 @@ class Logic:
     def __init__(self, app, credentials):
         self.gui_app = app
         self.credentials_dict = credentials
-        self.dx = 0
-        self.dy = 0
-        self.prev_x = 0
-        self.prev_y = 0
+        self.day_state = ""
+        self.get_sunrise_sunset_time()
         self.timer()
 
     def timer(self):
@@ -74,3 +83,22 @@ class Logic:
         y_cor = (90 - y) * (MAP_HEIGHT/180)
 
         self.gui_app.move_iss(x_cor,y_cor)
+
+    def get_sunrise_sunset_time(self):
+        parameters = {
+            "lng": 21.017532,
+            "lat": 52.237049
+        }
+        response = requests.get(self.credentials_dict["SUNSET_SUNRISE_API"], params=parameters, timeout = 10)
+        data = response.json()
+        sunrise = int(data["sunrise"].split("T")[1].split(":")[0])
+        sunset = int(data["sunset"].split("T")[1].split(":")[0])
+        self.is_night_time(sunrise,sunset)
+
+    def is_night_time(self,sunrise_time,sunset_time):
+        if sunrise_time < dt.datetime.now().hour < sunset_time:
+            self.day_state = "Day time"
+        else:
+            self.day_state = "Night time"
+            #self.send_mail()
+        self.gui_app.change_label_image(self.day_state)
