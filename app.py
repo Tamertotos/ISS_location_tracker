@@ -101,7 +101,7 @@ class Logic:
             self.day_state = "Day time"
         else:
             self.day_state = "Night time"
-            self.send_mail()
+            #self.send_mail()
         self.gui_app.change_label_image(self.day_state)
 
     def send_mail(self):

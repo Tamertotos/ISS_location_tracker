@@ -4,6 +4,9 @@ A desktop GUI application built with **Python** and **Tkinter** that tracks the 
 
 ---
 
+## Screenshot
+![alt text](<Ekran Görüntüsü (959).png>)
+
 ## Features
 
 - 🌍 **Live ISS tracking** — displays the ISS's current position on a world map, updated at regular intervals.
