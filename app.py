@@ -60,12 +60,15 @@ class Logic:
     def __init__(self, app, credentials):
         self.gui_app = app
         self.credentials_dict = credentials
+        self.sunrise:int = 0
+        self.sunset:int = 0
         self.day_state = ""
         self.get_sunrise_sunset_time()
         self.timer()
 
     def timer(self):
         self.gui_app.change_time_label()
+        self.time_of_day()
         self.space_station_location_api()
         self.gui_app.after(60000,self.timer)
 
@@ -76,6 +79,7 @@ class Logic:
             lat, long = float(data["iss_position"]["latitude"]), float(data["iss_position"]["longitude"])
             self.gui_app.change_space_station_loc_label(lat, long)
             self.move_space_station_loc(long, lat)
+            self.is_iss_nearby(lat, long)
         except requests.exceptions.ConnectTimeout:
             self.space_station_location_api()
 
@@ -87,22 +91,34 @@ class Logic:
 
     def get_sunrise_sunset_time(self):
         parameters = {
-            "lng": 21.017532,
-            "lat": 52.237049
+            "lng": LONGITUDE,
+            "lat": LATITUDE
         }
         response = requests.get(self.credentials_dict["SUNSET_SUNRISE_API"], params=parameters, timeout = 10)
         data = response.json()
-        sunrise = int(data["sunrise"].split("T")[1].split(":")[0])
-        sunset = int(data["sunset"].split("T")[1].split(":")[0])
-        self.is_night_time(sunrise,sunset)
+        self.sunrise = int(data["sunrise"].split("T")[1].split(":")[0])
+        self.sunset = int(data["sunset"].split("T")[1].split(":")[0])
 
-    def is_night_time(self,sunrise_time,sunset_time):
-        if sunrise_time < dt.datetime.now().hour < sunset_time:
+    def time_of_day(self):
+        if self.sunrise < dt.datetime.now().hour < self.sunset:
             self.day_state = "Day time"
         else:
-            self.day_state = "Night time"
-            #self.send_mail()
+            self.day_state = "Nighttime"
         self.gui_app.change_label_image(self.day_state)
+
+    def is_iss_nearby(self,lat,long):
+        """This method is invoked by another method whereby ISS api is invoked and its current location received.
+        IF given condition -ISS is nearby lat, and long wise another method is invoked to see it is whether nighttime"""
+        if lat - 10 <  LATITUDE < lat + 10 and long - 10 < LONGITUDE < long + 10:
+            self.is_iss_visible()
+        
+    def is_iss_visible(self):
+        """This method only invoked when ISS is nearby to our location.
+        To see the ISS it must be nighttime, and must be close to our location longitude and latitude wise.
+        If it is nighttime and close to our location, send_mail method is invoked
+        """
+        if self.day_state == "Nighttime":
+            self.send_mail()
 
     def send_mail(self):
         smtp_address = ""
