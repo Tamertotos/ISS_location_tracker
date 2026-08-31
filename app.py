@@ -8,6 +8,7 @@ LATITUDE = 52.237049
 LONGITUDE = 21.017532
 MAP_HEIGHT = 640
 MAP_WIDTH = 1280
+PROXIMITY_THRESHOLD = 10
 
 class App(tkinter.Tk):
     def __init__(self):
@@ -19,7 +20,7 @@ class App(tkinter.Tk):
 
         self.daytime = {
             "Day time": tkinter.PhotoImage(file="Images/sun.png"),
-            "Night time": tkinter.PhotoImage(file="Images/moon.png")
+            "Nighttime": tkinter.PhotoImage(file="Images/moon.png")
         }
 
         self.build_canvas()
@@ -81,7 +82,7 @@ class Logic:
             self.move_space_station_loc(long, lat)
             self.is_iss_nearby(lat, long)
         except requests.exceptions.ConnectTimeout:
-            self.space_station_location_api()
+            print("ISS API request timed out, will retry next cycle.")
 
     def move_space_station_loc(self,x,y):
         x_cor = (180 + x) * (MAP_WIDTH/360)
@@ -109,9 +110,9 @@ class Logic:
     def is_iss_nearby(self,lat,long):
         """This method is invoked by another method whereby ISS api is invoked and its current location received.
         IF given condition -ISS is nearby lat, and long wise another method is invoked to see it is whether nighttime"""
-        if lat - 10 <  LATITUDE < lat + 10 and long - 10 < LONGITUDE < long + 10:
+        if lat - PROXIMITY_THRESHOLD <  LATITUDE < lat + PROXIMITY_THRESHOLD and long - PROXIMITY_THRESHOLD < LONGITUDE < long + PROXIMITY_THRESHOLD:
             self.is_iss_visible()
-        
+
     def is_iss_visible(self):
         """This method only invoked when ISS is nearby to our location.
         To see the ISS it must be nighttime, and must be close to our location longitude and latitude wise.
